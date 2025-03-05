@@ -1,86 +1,137 @@
 import {
-    Action,
-    HandlerCallback,
-    IAgentRuntime,
-    Memory,
-    ModelClass,
-    State,
-    composeContext,
-    elizaLogger,
-    generateObjectDeprecated,
-} from "@elizaos/core";
-import { sendNotionGetRequest } from "../action";
-import { retrievePageTemplate } from "../../templates";
+  Action,
+  HandlerCallback,
+  IAgentRuntime,
+  Memory,
+  ModelClass,
+  State,
+  composeContext,
+  elizaLogger,
+  generateObjectDeprecated,
+} from '@elizaos/core';
+import { retrievePageTemplate } from '../../templates';
+import { sendNotionGetRequest } from '../action';
+import { NotionPageResponse } from '../../interfaces/NotionPage';
 
-interface IPageParams {
-    id: string;
+interface INotionPage {
+  id: string;
 }
 
 const buildPageParams = async (
-    state: State,
-    runtime: IAgentRuntime
-): Promise<IPageParams> => {
-    const retrievePageContext = composeContext({
-        state,
-        template: retrievePageTemplate,
-    });
+  state: State,
+  runtime: IAgentRuntime
+): Promise<INotionPage> => {
+  const retrievePageContext = composeContext({
+    state,
+    template: retrievePageTemplate,
+  });
 
-    const pageParams = (await generateObjectDeprecated({
-        runtime,
-        context: retrievePageContext,
-        modelClass: ModelClass.LARGE,
-    })) as IPageParams;
+  const pageParams = (await generateObjectDeprecated({
+    runtime,
+    context: retrievePageContext,
+    modelClass: ModelClass.LARGE,
+  })) as INotionPage;
 
-    if (!pageParams.id) {
-        throw new Error("Page id not provided");
-    }
+  if (!pageParams.id) {
+    throw new Error('Page id not provided');
+  }
 
-    return pageParams;
+  return pageParams;
 };
 
 export const retrievePage: Action = {
-    name: "RETRIEVE_PAGE",
-    description: "Action to retrieve a Notion page",
-    similes: ["LIST_PAGE", "GET_PAGE", "FETCH_PAGE"],
-    examples: [
-        [
-            {
-                user: "assistant",
-                content: {
-                    text: "I'll help you retrieve a Notion page with ID 1234",
-                    action: "RETRIEVE_PAGE",
-                },
-            },
-            {
-                user: "user",
-                content: {
-                    text: "Retrieve a page with id 1234",
-                    action: "RETRIEVE_PAGE",
-                },
-            },
-        ],
+  name: 'RETRIEVE_PAGE',
+  description: 'Action to retrieve a Notion page',
+  similes: ['LIST_PAGE', 'GET_PAGE', 'FETCH_PAGE'],
+  examples: [
+    [
+      {
+        user: 'assistant',
+        content: {
+          text: "I'll help you retrieve a Notion page with ID 1234",
+          action: 'RETRIEVE_PAGE',
+        },
+      },
+      {
+        user: 'user',
+        content: {
+          text: 'Retrieve a page with id 1234',
+          action: 'RETRIEVE_PAGE',
+        },
+      },
     ],
-    suppressInitialMessage: true,
-    handler: async (
-        runtime: IAgentRuntime,
-        message: Memory,
-        state: State,
-        _options: { page_id?: string },
-        callback: HandlerCallback
-    ) => {
-        const apiKey = runtime.getSetting("NOTION_API_KEY");
-        const pageParams = await buildPageParams(state, runtime);
+  ],
+  suppressInitialMessage: true,
+  handler: async (
+    runtime: IAgentRuntime,
+    message: Memory,
+    state: State,
+    _options: { page_id?: string },
+    callback: HandlerCallback
+  ) => {
+    const apiKey = runtime.getSetting('NOTION_API_KEY');
+    const pageParams = await buildPageParams(state, runtime);
 
-        elizaLogger.info(`Page id from params is: ${pageParams.id}`);
-    },
-    validate: async (
-        runtime: IAgentRuntime,
-        _message: Memory,
-        state: State
-    ) => {
-        return (
-            !!runtime.getSetting("NOTION_API_KEY") &&
-            !!buildPageParams(state, runtime)
-        );
-    },
+    elizaLogger.info(`Api key: ${apiKey}`);
+    elizaLogger.info(`Page params: ${pageParams.id}`);
+
+    // const page = await getNotionPage(apiKey, pageParams.id);
+
+    // if (!page) {
+    //   return false;
+    // }
+
+    // const agentMessage = buildPageInfoMessage(page);
+
+    callback({
+      text: 'Here are the info about the page:',
+      content: 'faposkd',
+    });
+    return true;
+  },
+  validate: async (runtime: IAgentRuntime, _message: Memory, state: State) => {
+    return (
+      !!runtime.getSetting('NOTION_API_KEY') &&
+      !!buildPageParams(state, runtime)
+    );
+  },
+};
+
+const getNotionPage = async (
+  apiKey: string,
+  id: string
+): Promise<NotionPageResponse> => {
+  try {
+    const response = await sendNotionGetRequest<NotionPageResponse>(
+      apiKey,
+      `pages/${id}`
+    );
+
+    return response;
+  } catch (error) {
+    elizaLogger.error(`Error when fetching Notion page: ${error}`);
+    false;
+  }
+};
+
+const buildPageInfoMessage = (page: NotionPageResponse): string => {
+  const pageTitle = page.properties.title.title[0].plain_text;
+
+  const createdTime = new Date(page.created_time).toLocaleString();
+  const lastEditedTime = new Date(page.last_edited_time).toLocaleString();
+
+  // Build the message
+  let message = `📄 **Page Title:** ${pageTitle}\n`;
+  message += `🆔 **Page ID:** ${page.id}\n`;
+  message += `📅 **Created On:** ${createdTime}\n`;
+  message += `✏️ **Last Edited On:** ${lastEditedTime}\n`;
+  message += `👤 **Created By:** ${page.created_by.id}\n`;
+  message += `👤 **Last Edited By:** ${page.last_edited_by.id}\n`;
+  message += `🔗 **Notion URL:** ${page.url}\n`;
+
+  if (page.public_url) {
+    message += `🌐 **Public URL:** ${page.public_url}\n`;
+  }
+
+  return message;
 };

@@ -29,7 +29,7 @@ async function sendNotionGetRequest(apiKey, urlPath) {
     const url = BASE_URL + VERSION + urlPath;
     return (await axios.get(url, config)).data;
   } catch (error) {
-    return error;
+    throw error;
   }
 }
 
@@ -44,18 +44,33 @@ var listAllUsers = {
     const apiKey = validateNotionApiKey();
     if (!apiKey) {
       elizaLogger.error("Invalid api key");
-      return;
+      return false;
     }
-    const response = await sendNotionGetRequest(apiKey, "/users");
-    const users = response.results.map((user) => user.name).join(", ");
+    const response = await getNotionUsers(apiKey);
+    if (!response) {
+      return false;
+    }
+    const users = response.map((user) => user.name).join(", ");
     callback({
-      text: `Here are the users in your Notion workspace: ${users}`,
+      text: `Here are some users in your Notion workspace: ${users}`,
       content: users
     });
     return true;
   },
   validate: async (runtime, _message) => {
     return !!runtime.getSetting("NOTION_API_KEY");
+  }
+};
+var getNotionUsers = async (apiKey) => {
+  try {
+    const response = await sendNotionGetRequest(
+      apiKey,
+      "/users"
+    );
+    return response.results;
+  } catch (error) {
+    elizaLogger.error(`Error when fetching Notion users: ${error}`);
+    return;
   }
 };
 
@@ -76,7 +91,7 @@ Extract the following information about the requested page:
 
 - Id of the page
 
-Respond with a JSON markdown block containing only the extracted values. Use null for any values that cannot be determined:
+Respond with a JSON markdown block containing only the extracted values. Use \`null\` for any values that cannot be determined from the provided context. Ensure the JSON is valid and properly formatted.
 
 \`\`\`json
 {
@@ -127,7 +142,13 @@ var retrievePage = {
   handler: async (runtime, message, state, _options, callback) => {
     const apiKey = runtime.getSetting("NOTION_API_KEY");
     const pageParams = await buildPageParams(state, runtime);
-    elizaLogger2.info(`Page id from params is: ${pageParams.id}`);
+    elizaLogger2.info(`Api key: ${apiKey}`);
+    elizaLogger2.info(`Page params: ${pageParams.id}`);
+    callback({
+      text: "Here are the info about the page:",
+      content: "faposkd"
+    });
+    return true;
   },
   validate: async (runtime, _message, state) => {
     return !!runtime.getSetting("NOTION_API_KEY") && !!buildPageParams(state, runtime);

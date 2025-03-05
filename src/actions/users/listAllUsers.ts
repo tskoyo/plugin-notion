@@ -8,6 +8,8 @@ import {
 } from '@elizaos/core';
 
 import { sendNotionGetRequest, validateNotionApiKey } from '../action';
+import { NotionUserListResponse } from '../../interfaces/NotionListResponse';
+import { NotionUser } from '../../interfaces/NotionUser';
 
 export const listAllUsers: Action = {
   name: 'LIST_ALL_USERS',
@@ -26,15 +28,19 @@ export const listAllUsers: Action = {
 
     if (!apiKey) {
       elizaLogger.error('Invalid api key');
-      return;
+      return false;
     }
 
-    const response = await sendNotionGetRequest(apiKey, '/users');
+    const response = await getNotionUsers(apiKey);
 
-    const users = response.results.map((user) => user.name).join(', ');
+    if (!response) {
+      return false;
+    }
+
+    const users = response.map((user) => user.name).join(', ');
 
     callback({
-      text: `Here are the users in your Notion workspace: ${users}`,
+      text: `Here are some users in your Notion workspace: ${users}`,
       content: users,
     });
     return true;
@@ -42,4 +48,18 @@ export const listAllUsers: Action = {
   validate: async (runtime, _message) => {
     return !!runtime.getSetting('NOTION_API_KEY');
   },
+};
+
+const getNotionUsers = async (apiKey: string): Promise<NotionUser[]> => {
+  try {
+    const response = await sendNotionGetRequest<NotionUserListResponse>(
+      apiKey,
+      '/users'
+    );
+
+    return response.results;
+  } catch (error) {
+    elizaLogger.error(`Error when fetching Notion users: ${error}`);
+    return;
+  }
 };
