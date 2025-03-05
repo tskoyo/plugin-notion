@@ -37,12 +37,7 @@ async function sendNotionGetRequest(apiKey, urlPath) {
 var listAllUsers = {
   name: "LIST_ALL_USERS",
   description: "Lists all users within the workspace",
-  similes: [
-    "FETCH_USERS",
-    "LIST_USERS",
-    "GET_ALL_USERS",
-    "RETRIEVE_ALL_USERS"
-  ],
+  similes: ["FETCH_USERS", "LIST_USERS", "GET_ALL_USERS", "RETRIEVE_ALL_USERS"],
   examples: [],
   suppressInitialMessage: true,
   handler: async (runtime, message, state, _options, callback) => {
