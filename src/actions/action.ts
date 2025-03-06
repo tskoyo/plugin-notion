@@ -38,7 +38,8 @@ export async function sendNotionGetRequest<T>(
 
 export async function sendNotionPostRequest<T>(
   apiKey: string,
-  urlPath: string
+  urlPath: string,
+  payload: Object
 ): Promise<T> {
   try {
     const config: AxiosRequestConfig = {
@@ -50,7 +51,7 @@ export async function sendNotionPostRequest<T>(
       timeout: DEFAULT_TIMEOUT,
     };
     const url = BASE_URL + VERSION + urlPath;
-    return (await axios.get<T>(url, config)).data;
+    return (await axios.post<T>(url, payload, config)).data;
   } catch (error) {
     throw error;
   }

@@ -10,7 +10,7 @@ import {
   generateObjectDeprecated,
 } from '@elizaos/core';
 import { createPageTemplate } from '../../templates';
-import { sendNotionGetRequest } from '../action';
+import { sendNotionPostRequest } from '../action';
 import { NotionPageResponse } from '../../interfaces/NotionPage';
 
 interface NotionPageParams {
@@ -18,37 +18,11 @@ interface NotionPageParams {
   title: string;
 }
 
-// TODO: Add implementation for database parent
-// interface DatabaseParent {
-//   database_id: string;
-// }
-
-interface TextContent {
-  content: string;
-}
-
-interface TitleProperty {
-  text: TextContent;
-}
-
-interface Properties {
-  title: TitleProperty[];
-}
-
-interface Parent {
-  type: string;
-  page_id: string;
-}
-
-interface NotionPagePayload {
-  parent: Parent;
-  properties: Properties;
-}
-
 export const createPage: Action = {
   name: 'CREATE_PAGE',
   description: 'Action to create a Notion page inside of the existing page',
   similes: ['BUILD_PAGE'],
+  suppressInitialMessage: true,
   examples: [
     [
       {
@@ -74,10 +48,27 @@ export const createPage: Action = {
     _options: { page_id?: string },
     callback: HandlerCallback
   ) => {
+    const apiKey = runtime.getSetting('NOTION_API_KEY');
     const params = await buildPageParams(state, runtime);
 
     elizaLogger.info(`Id is: ${params.id}`);
     elizaLogger.info(`Title is: ${params.title}`);
+
+    const payload = buildPayload(params.id, params.title);
+    const page = createNotionPage(apiKey, payload);
+
+    if (!page) {
+      callback({
+        text: 'Unable to create a new page',
+      });
+      return false;
+    }
+
+    callback({
+      text: 'New page is successfully created',
+    });
+
+    return true;
   },
   validate: async (runtime: IAgentRuntime, _message: Memory, state: State) => {
     return !!runtime.getSetting('NOTION_API_KEY');
@@ -106,4 +97,38 @@ const buildPageParams = async (
   return pageParams;
 };
 
-const buildPayload = () => {};
+const createNotionPage = async (
+  apiKey: string,
+  payload: Object
+): Promise<NotionPageResponse> => {
+  try {
+    const response = await sendNotionPostRequest<NotionPageResponse>(
+      apiKey,
+      '/pages',
+      payload
+    );
+
+    return response;
+  } catch (error) {
+    elizaLogger.error(`Error when fetching Notion page: ${error}`);
+    return null;
+  }
+};
+
+const buildPayload = (page_id: string, title: string): Object => {
+  return {
+    parent: {
+      type: 'page_id',
+      page_id: page_id,
+    },
+    properties: {
+      title: [
+        {
+          text: {
+            content: title,
+          },
+        },
+      ],
+    },
+  };
+};

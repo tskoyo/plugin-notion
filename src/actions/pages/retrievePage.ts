@@ -110,7 +110,7 @@ const getNotionPage = async (
     return response;
   } catch (error) {
     elizaLogger.error(`Error when fetching Notion page: ${error}`);
-    false;
+    return null;
   }
 };
 

@@ -32,6 +32,22 @@ async function sendNotionGetRequest(apiKey, urlPath) {
     throw error;
   }
 }
+async function sendNotionPostRequest(apiKey, urlPath, payload) {
+  try {
+    const config = {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Notion-Version": NOTION_VERSION,
+        "Content-Type": "application/json"
+      },
+      timeout: DEFAULT_TIMEOUT
+    };
+    const url = BASE_URL + VERSION + urlPath;
+    return (await axios.post(url, payload, config)).data;
+  } catch (error) {
+    throw error;
+  }
+}
 
 // src/actions/users/listAllUsers.ts
 var listAllUsers = {
@@ -186,7 +202,7 @@ var getNotionPage = async (apiKey, id) => {
     return response;
   } catch (error) {
     elizaLogger2.error(`Error when fetching Notion page: ${error}`);
-    false;
+    return null;
   }
 };
 var buildPageInfoMessage = (page) => {
@@ -225,6 +241,7 @@ var createPage = {
   name: "CREATE_PAGE",
   description: "Action to create a Notion page inside of the existing page",
   similes: ["BUILD_PAGE"],
+  suppressInitialMessage: true,
   examples: [
     [
       {
@@ -244,9 +261,22 @@ var createPage = {
     ]
   ],
   handler: async (runtime, message, state, _options, callback) => {
+    const apiKey = runtime.getSetting("NOTION_API_KEY");
     const params = await buildPageParams2(state, runtime);
     elizaLogger3.info(`Id is: ${params.id}`);
     elizaLogger3.info(`Title is: ${params.title}`);
+    const payload = buildPayload(params.id, params.title);
+    const page = createNotionPage(apiKey, payload);
+    if (!page) {
+      callback({
+        text: "Unable to create a new page"
+      });
+      return false;
+    }
+    callback({
+      text: "New page is successfully created"
+    });
+    return true;
   },
   validate: async (runtime, _message, state) => {
     return !!runtime.getSetting("NOTION_API_KEY");
@@ -266,6 +296,36 @@ var buildPageParams2 = async (state, runtime) => {
     throw new Error("Page id not provided");
   }
   return pageParams;
+};
+var createNotionPage = async (apiKey, payload) => {
+  try {
+    const response = await sendNotionPostRequest(
+      apiKey,
+      "/pages",
+      payload
+    );
+    return response;
+  } catch (error) {
+    elizaLogger3.error(`Error when fetching Notion page: ${error}`);
+    return null;
+  }
+};
+var buildPayload = (page_id, title) => {
+  return {
+    parent: {
+      type: "page_id",
+      page_id
+    },
+    properties: {
+      title: [
+        {
+          text: {
+            content: title
+          }
+        }
+      ]
+    }
+  };
 };
 
 // src/index.ts
