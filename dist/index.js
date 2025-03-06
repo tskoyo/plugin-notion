@@ -99,6 +99,24 @@ You MUST respond with ONLY a JSON block and nothing else. Do NOT include any exp
 }
 \`\`\`
 `;
+var createPageTemplate = `Given the recent messages and page information below:
+
+{{recentMessages}}
+
+Extract the following information about the requested page:
+
+- Id of the page
+- Title of the page
+
+You MUST respond with ONLY a JSON block and nothing else. Do NOT include any explanations, commentary, or text outside the JSON block.
+
+\`\`\`json
+{
+    "id": string | null
+    "title": string | null
+}
+\`\`\`
+`;
 
 // src/actions/pages/retrievePage.ts
 var buildPageParams = async (state, runtime) => {
@@ -196,11 +214,65 @@ var buildPageInfoMessage = (page) => {
   return message;
 };
 
+// src/actions/pages/createPage.ts
+import {
+  ModelClass as ModelClass2,
+  composeContext as composeContext2,
+  elizaLogger as elizaLogger3,
+  generateObjectDeprecated as generateObjectDeprecated2
+} from "@elizaos/core";
+var createPage = {
+  name: "CREATE_PAGE",
+  description: "Action to create a Notion page inside of the existing page",
+  similes: ["BUILD_PAGE"],
+  examples: [
+    [
+      {
+        user: "assistant",
+        content: {
+          text: "I'll help you create a Notion page with ID 1234",
+          action: "CREATE_PAGE"
+        }
+      },
+      {
+        user: "user",
+        content: {
+          text: "Create a notion page inside of the existing page with id 1234",
+          action: "CREATE_PAGE"
+        }
+      }
+    ]
+  ],
+  handler: async (runtime, message, state, _options, callback) => {
+    const params = await buildPageParams2(state, runtime);
+    elizaLogger3.info(`Id is: ${params.id}`);
+    elizaLogger3.info(`Title is: ${params.title}`);
+  },
+  validate: async (runtime, _message, state) => {
+    return !!runtime.getSetting("NOTION_API_KEY");
+  }
+};
+var buildPageParams2 = async (state, runtime) => {
+  const createPageContext = composeContext2({
+    state,
+    template: createPageTemplate
+  });
+  const pageParams = await generateObjectDeprecated2({
+    runtime,
+    context: createPageContext,
+    modelClass: ModelClass2.LARGE
+  });
+  if (!pageParams.id && !pageParams.title) {
+    throw new Error("Page id not provided");
+  }
+  return pageParams;
+};
+
 // src/index.ts
 var notionPlugin = {
   name: "notion",
   description: "Notion plugin",
-  actions: [listAllUsers, retrievePage]
+  actions: [listAllUsers, retrievePage, createPage]
 };
 export {
   notionPlugin

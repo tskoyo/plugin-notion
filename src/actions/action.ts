@@ -35,3 +35,23 @@ export async function sendNotionGetRequest<T>(
     throw error;
   }
 }
+
+export async function sendNotionPostRequest<T>(
+  apiKey: string,
+  urlPath: string
+): Promise<T> {
+  try {
+    const config: AxiosRequestConfig = {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Notion-Version': NOTION_VERSION,
+        'Content-Type': 'application/json',
+      },
+      timeout: DEFAULT_TIMEOUT,
+    };
+    const url = BASE_URL + VERSION + urlPath;
+    return (await axios.get<T>(url, config)).data;
+  } catch (error) {
+    throw error;
+  }
+}
