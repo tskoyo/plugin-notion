@@ -142,17 +142,58 @@ var retrievePage = {
   handler: async (runtime, message, state, _options, callback) => {
     const apiKey = runtime.getSetting("NOTION_API_KEY");
     const pageParams = await buildPageParams(state, runtime);
-    elizaLogger2.info(`Api key: ${apiKey}`);
-    elizaLogger2.info(`Page params: ${pageParams.id}`);
+    const page = await getNotionPage(apiKey, pageParams.id);
+    if (!page) {
+      callback({
+        text: `The page with id ${pageParams.id} was not found`
+      });
+      return false;
+    }
+    const agentMessage = buildPageInfoMessage(page);
     callback({
-      text: "Here are the info about the page:",
-      content: "faposkd"
+      text: agentMessage
     });
     return true;
   },
   validate: async (runtime, _message, state) => {
     return !!runtime.getSetting("NOTION_API_KEY") && !!buildPageParams(state, runtime);
   }
+};
+var getNotionPage = async (apiKey, id) => {
+  try {
+    const response = await sendNotionGetRequest(
+      apiKey,
+      `/pages/${id}`
+    );
+    return response;
+  } catch (error) {
+    elizaLogger2.error(`Error when fetching Notion page: ${error}`);
+    false;
+  }
+};
+var buildPageInfoMessage = (page) => {
+  const pageTitle = page.properties.title.title[0].plain_text;
+  const createdTime = new Date(page.created_time).toLocaleString();
+  const lastEditedTime = new Date(page.last_edited_time).toLocaleString();
+  let message = `\u{1F4C4} Page Title: ${pageTitle}
+`;
+  message += `\u{1F194} Page ID: ${page.id}
+`;
+  message += `\u{1F4C5} Created On: ${createdTime}
+`;
+  message += `\u270F\uFE0F Last Edited On: ${lastEditedTime}
+`;
+  message += `\u{1F464} Created By: ${page.created_by.id}
+`;
+  message += `\u{1F464} Last Edited By: ${page.last_edited_by.id}
+`;
+  message += `\u{1F517} Notion URL: ${page.url}
+`;
+  if (page.public_url) {
+    message += `\u{1F310} **Public URL:** ${page.public_url}
+`;
+  }
+  return message;
 };
 
 // src/index.ts

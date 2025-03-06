@@ -72,20 +72,20 @@ export const retrievePage: Action = {
     const apiKey = runtime.getSetting('NOTION_API_KEY');
     const pageParams = await buildPageParams(state, runtime);
 
-    elizaLogger.info(`Api key: ${apiKey}`);
-    elizaLogger.info(`Page params: ${pageParams.id}`);
+    const page = await getNotionPage(apiKey, pageParams.id);
 
-    // const page = await getNotionPage(apiKey, pageParams.id);
+    if (!page) {
+      callback({
+        text: `The page with id ${pageParams.id} was not found`,
+      });
 
-    // if (!page) {
-    //   return false;
-    // }
+      return false;
+    }
 
-    // const agentMessage = buildPageInfoMessage(page);
+    const agentMessage = buildPageInfoMessage(page);
 
     callback({
-      text: 'Here are the info about the page:',
-      content: 'faposkd',
+      text: agentMessage,
     });
     return true;
   },
@@ -104,7 +104,7 @@ const getNotionPage = async (
   try {
     const response = await sendNotionGetRequest<NotionPageResponse>(
       apiKey,
-      `pages/${id}`
+      `/pages/${id}`
     );
 
     return response;
@@ -121,13 +121,13 @@ const buildPageInfoMessage = (page: NotionPageResponse): string => {
   const lastEditedTime = new Date(page.last_edited_time).toLocaleString();
 
   // Build the message
-  let message = `📄 **Page Title:** ${pageTitle}\n`;
-  message += `🆔 **Page ID:** ${page.id}\n`;
-  message += `📅 **Created On:** ${createdTime}\n`;
-  message += `✏️ **Last Edited On:** ${lastEditedTime}\n`;
-  message += `👤 **Created By:** ${page.created_by.id}\n`;
-  message += `👤 **Last Edited By:** ${page.last_edited_by.id}\n`;
-  message += `🔗 **Notion URL:** ${page.url}\n`;
+  let message = `📄 Page Title: ${pageTitle}\n`;
+  message += `🆔 Page ID: ${page.id}\n`;
+  message += `📅 Created On: ${createdTime}\n`;
+  message += `✏️ Last Edited On: ${lastEditedTime}\n`;
+  message += `👤 Created By: ${page.created_by.id}\n`;
+  message += `👤 Last Edited By: ${page.last_edited_by.id}\n`;
+  message += `🔗 Notion URL: ${page.url}\n`;
 
   if (page.public_url) {
     message += `🌐 **Public URL:** ${page.public_url}\n`;

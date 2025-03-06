@@ -1,5 +1,6 @@
 import axios, { AxiosRequestConfig, AxiosError } from 'axios';
 import { NotionUserListResponse } from '../interfaces/NotionListResponse';
+import { elizaLogger } from '@elizaos/core';
 
 const DEFAULT_TIMEOUT = 30000; // 30 seconds
 const BASE_URL = 'https://api.notion.com';
