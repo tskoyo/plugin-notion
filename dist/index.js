@@ -263,8 +263,10 @@ var createPage = {
   handler: async (runtime, message, state, _options, callback) => {
     const apiKey = runtime.getSetting("NOTION_API_KEY");
     const params = await buildPageParams2(state, runtime);
-    elizaLogger3.info(`Id is: ${params.id}`);
-    elizaLogger3.info(`Title is: ${params.title}`);
+    if (!params) {
+      elizaLogger3.error(`Both title and parent page id should be present`);
+      return false;
+    }
     const payload = buildPayload(params.id, params.title);
     const page = createNotionPage(apiKey, payload);
     if (!page) {
@@ -292,8 +294,8 @@ var buildPageParams2 = async (state, runtime) => {
     context: createPageContext,
     modelClass: ModelClass2.LARGE
   });
-  if (!pageParams.id && !pageParams.title) {
-    throw new Error("Page id not provided");
+  if (pageParams.id == null || pageParams.title == null) {
+    return null;
   }
   return pageParams;
 };
