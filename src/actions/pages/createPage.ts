@@ -21,7 +21,7 @@ interface NotionPageParams {
 export const createPage: Action = {
   name: 'CREATE_PAGE',
   description: 'Action to create a Notion page inside of the existing page',
-  similes: ['BUILD_PAGE'],
+  similes: ['BUILD_PAGE', 'DEFINE_PAGE'],
   suppressInitialMessage: true,
   examples: [
     [
