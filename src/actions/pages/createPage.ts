@@ -99,7 +99,7 @@ const buildPageParams = async (
   return pageParams;
 };
 
-const createNotionPage = async (
+export const createNotionPage = async (
   apiKey: string,
   payload: Object
 ): Promise<NotionPageResponse> => {

@@ -29,7 +29,8 @@
   },
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts --tsconfig ./tsconfig.json",
-    "dev": "tsup src/index.ts --format esm --dts --watch --tsconfig ./tsconfig.json"
+    "dev": "tsup src/index.ts --format esm --dts --watch --tsconfig ./tsconfig.json",
+    "test": "vitest"
   },
   "agentConfig": {
     "pluginType": "elizaos:client:1.0.0",
