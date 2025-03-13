@@ -9,7 +9,7 @@ import {
   elizaLogger,
   generateObjectDeprecated,
 } from '@elizaos/core';
-import { createPageTemplate } from '../../templates';
+import { createPageTemplate } from '../../templates/index';
 import { sendNotionPostRequest } from '../action';
 import { NotionPageResponse } from '../../interfaces/NotionPage';
 
@@ -117,7 +117,7 @@ export const createNotionPage = async (
   }
 };
 
-const buildPayload = (page_id: string, title: string): Object => {
+export const buildPayload = (page_id: string, title: string): Object => {
   return {
     parent: {
       type: 'page_id',

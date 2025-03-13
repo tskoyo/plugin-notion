@@ -1,8 +1,8 @@
 import { NotionUser } from './NotionUser';
 
-interface NotionParentWorkspace {
-  type: 'workspace';
-  workspace: true;
+interface NotionParentPage {
+  type: 'page_id';
+  page_id: string;
 }
 
 interface NotionText {
@@ -46,7 +46,7 @@ export interface NotionPageResponse {
   last_edited_by: NotionUser;
   cover: null;
   icon: null;
-  parent: NotionParentWorkspace;
+  parent: NotionParentPage;
   archived: boolean;
   in_trash: boolean;
   properties: NotionProperties;

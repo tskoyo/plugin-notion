@@ -9,14 +9,14 @@ var DEFAULT_TIMEOUT = 3e4;
 var BASE_URL = "https://api.notion.com";
 var VERSION = "/v1";
 var NOTION_VERSION = "2022-06-28";
-function validateNotionApiKey() {
+var validateNotionApiKey = () => {
   const apiKey = process.env.NOTION_API_KEY;
   if (!apiKey) {
     throw new Error("Notion API key not set");
   }
   return apiKey;
-}
-async function sendNotionGetRequest(apiKey, urlPath) {
+};
+var sendNotionGetRequest = async (apiKey, urlPath) => {
   try {
     const config = {
       headers: {
@@ -31,8 +31,8 @@ async function sendNotionGetRequest(apiKey, urlPath) {
   } catch (error) {
     throw error;
   }
-}
-async function sendNotionPostRequest(apiKey, urlPath, payload) {
+};
+var sendNotionPostRequest = async (apiKey, urlPath, payload) => {
   try {
     const config = {
       headers: {
@@ -47,7 +47,7 @@ async function sendNotionPostRequest(apiKey, urlPath, payload) {
   } catch (error) {
     throw error;
   }
-}
+};
 
 // src/actions/users/listAllUsers.ts
 var listAllUsers = {
