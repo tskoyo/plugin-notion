@@ -1,4 +1,4 @@
-import { NotionUser } from './NotionUser';
+import { NotionUser } from './notionUser';
 
 interface NotionParentPage {
   type: 'page_id';
