@@ -237,6 +237,16 @@ import {
   elizaLogger as elizaLogger3,
   generateObjectDeprecated as generateObjectDeprecated2
 } from "@elizaos/core";
+
+// src/errors/validationError.ts
+var ValidationError = class extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "ValidationError";
+  }
+};
+
+// src/actions/pages/createPage.ts
 var createPage = {
   name: "CREATE_PAGE",
   description: "Action to create a Notion page inside of the existing page",
@@ -263,12 +273,7 @@ var createPage = {
   handler: async (runtime, message, state, _options, callback) => {
     const apiKey = runtime.getSetting("NOTION_API_KEY");
     const params = await buildPageParams2(state, runtime);
-    if (!params) {
-      elizaLogger3.error(`Both title and parent page id should be present`);
-      return false;
-    }
-    const payload = buildPayload(params.id, params.title);
-    const page = createNotionPage(apiKey, payload);
+    const page = createNotionPage(apiKey, params);
     if (!page) {
       callback({
         text: "Unable to create a new page"
@@ -284,23 +289,10 @@ var createPage = {
     return !!runtime.getSetting("NOTION_API_KEY");
   }
 };
-var buildPageParams2 = async (state, runtime) => {
-  const createPageContext = composeContext2({
-    state,
-    template: createPageTemplate
-  });
-  const pageParams = await generateObjectDeprecated2({
-    runtime,
-    context: createPageContext,
-    modelClass: ModelClass2.LARGE
-  });
-  if (pageParams.id == null || pageParams.title == null) {
-    return null;
-  }
-  return pageParams;
-};
-var createNotionPage = async (apiKey, payload) => {
+var createNotionPage = async (apiKey, params) => {
   try {
+    const validatedParams = validateParams(params.id, params.title);
+    const payload = buildPayload(validatedParams.id, validatedParams.title);
     const response = await sendNotionPostRequest(
       apiKey,
       "/pages",
@@ -308,7 +300,11 @@ var createNotionPage = async (apiKey, payload) => {
     );
     return response;
   } catch (error) {
-    elizaLogger3.error(`Error when fetching Notion page: ${error}`);
+    if (error instanceof ValidationError) {
+      elizaLogger3.error(`Param validation: ${error}`);
+    } else {
+      elizaLogger3.error(`Error when fetching Notion page: ${error}`);
+    }
     return null;
   }
 };
@@ -328,6 +324,26 @@ var buildPayload = (page_id, title) => {
       ]
     }
   };
+};
+var validateParams = (page_id, title) => {
+  if (!page_id || !title) {
+    throw new ValidationError(
+      "Params are not valid. Required fields: id and title"
+    );
+  }
+  return { id: page_id, title };
+};
+var buildPageParams2 = async (state, runtime) => {
+  const createPageContext = composeContext2({
+    state,
+    template: createPageTemplate
+  });
+  const pageParams = await generateObjectDeprecated2({
+    runtime,
+    context: createPageContext,
+    modelClass: ModelClass2.LARGE
+  });
+  return pageParams;
 };
 
 // src/index.ts

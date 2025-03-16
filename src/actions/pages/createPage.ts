@@ -72,30 +72,13 @@ export const createPage: Action = {
   },
 };
 
-const buildPageParams = async (
-  state: State,
-  runtime: IAgentRuntime
-): Promise<CreateNotionPageParams> => {
-  const createPageContext = composeContext({
-    state,
-    template: createPageTemplate,
-  });
-
-  const pageParams = (await generateObjectDeprecated({
-    runtime,
-    context: createPageContext,
-    modelClass: ModelClass.LARGE,
-  })) as CreateNotionPageParams;
-
-  return pageParams;
-};
-
 export const createNotionPage = async (
   apiKey: string,
   params: CreateNotionPageParams
 ): Promise<NotionPageResponse> => {
   try {
-    const payload = buildPayload(params.id, params.title);
+    const validatedParams = validateParams(params.id, params.title);
+    const payload = buildPayload(validatedParams.id, validatedParams.title);
 
     const response = await sendNotionPostRequest<NotionPageResponse>(
       apiKey,
@@ -115,18 +98,16 @@ export const createNotionPage = async (
 };
 
 export const buildPayload = (page_id: string, title: string): Object => {
-  const validatedParams = validateParams(page_id, title);
-
   return {
     parent: {
       type: 'page_id',
-      page_id: validatedParams.id,
+      page_id: page_id,
     },
     properties: {
       title: [
         {
           text: {
-            content: validatedParams.title,
+            content: title,
           },
         },
       ],
@@ -145,4 +126,22 @@ const validateParams = (
   }
 
   return { id: page_id, title: title } as CreateNotionPageParams;
+};
+
+const buildPageParams = async (
+  state: State,
+  runtime: IAgentRuntime
+): Promise<CreateNotionPageParams> => {
+  const createPageContext = composeContext({
+    state,
+    template: createPageTemplate,
+  });
+
+  const pageParams = (await generateObjectDeprecated({
+    runtime,
+    context: createPageContext,
+    modelClass: ModelClass.LARGE,
+  })) as CreateNotionPageParams;
+
+  return pageParams;
 };
