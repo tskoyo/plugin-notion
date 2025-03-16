@@ -11,7 +11,7 @@ import {
 } from '@elizaos/core';
 import { retrievePageTemplate } from '../../templates';
 import { sendNotionGetRequest } from '../action';
-import { NotionPageResponse } from '../../interfaces/NotionPage';
+import { NotionPageResponse } from '../../interfaces/notionPage';
 
 interface INotionPage {
   id: string;

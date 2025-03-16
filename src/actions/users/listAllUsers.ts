@@ -8,8 +8,8 @@ import {
 } from '@elizaos/core';
 
 import { sendNotionGetRequest, validateNotionApiKey } from '../action';
-import { NotionUserListResponse } from '../../interfaces/NotionListResponse';
-import { NotionUser } from '../../interfaces/NotionUser';
+import { NotionUserListResponse } from '../../interfaces/notionListResponse';
+import { NotionUser } from '../../interfaces/notionUser';
 
 export const listAllUsers: Action = {
   name: 'LIST_ALL_USERS',

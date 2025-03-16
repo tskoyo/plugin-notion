@@ -11,9 +11,10 @@ import {
 } from '@elizaos/core';
 import { createPageTemplate } from '../../templates/index';
 import { sendNotionPostRequest } from '../action';
-import { NotionPageResponse } from '../../interfaces/NotionPage';
+import { NotionPageResponse } from '../../interfaces/notionPage';
+import { ValidationError } from '../../errors/validationError';
 
-interface NotionPageParams {
+export interface CreateNotionPageParams {
   id: string;
   title: string;
 }
@@ -51,13 +52,7 @@ export const createPage: Action = {
     const apiKey = runtime.getSetting('NOTION_API_KEY');
     const params = await buildPageParams(state, runtime);
 
-    if (!params) {
-      elizaLogger.error(`Both title and parent page id should be present`);
-      return false;
-    }
-
-    const payload = buildPayload(params.id, params.title);
-    const page = createNotionPage(apiKey, payload);
+    const page = createNotionPage(apiKey, params);
 
     if (!page) {
       callback({
@@ -80,7 +75,7 @@ export const createPage: Action = {
 const buildPageParams = async (
   state: State,
   runtime: IAgentRuntime
-): Promise<NotionPageParams> => {
+): Promise<CreateNotionPageParams> => {
   const createPageContext = composeContext({
     state,
     template: createPageTemplate,
@@ -90,20 +85,18 @@ const buildPageParams = async (
     runtime,
     context: createPageContext,
     modelClass: ModelClass.LARGE,
-  })) as NotionPageParams;
-
-  if (pageParams.id == null || pageParams.title == null) {
-    return null;
-  }
+  })) as CreateNotionPageParams;
 
   return pageParams;
 };
 
 export const createNotionPage = async (
   apiKey: string,
-  payload: Object
+  params: CreateNotionPageParams
 ): Promise<NotionPageResponse> => {
   try {
+    const payload = buildPayload(params.id, params.title);
+
     const response = await sendNotionPostRequest<NotionPageResponse>(
       apiKey,
       '/pages',
@@ -112,25 +105,44 @@ export const createNotionPage = async (
 
     return response;
   } catch (error) {
-    elizaLogger.error(`Error when fetching Notion page: ${error}`);
+    if (error instanceof ValidationError) {
+      elizaLogger.error(`Param validation: ${error}`);
+    } else {
+      elizaLogger.error(`Error when fetching Notion page: ${error}`);
+    }
     return null;
   }
 };
 
 export const buildPayload = (page_id: string, title: string): Object => {
+  const validatedParams = validateParams(page_id, title);
+
   return {
     parent: {
       type: 'page_id',
-      page_id: page_id,
+      page_id: validatedParams.id,
     },
     properties: {
       title: [
         {
           text: {
-            content: title,
+            content: validatedParams.title,
           },
         },
       ],
     },
   };
+};
+
+const validateParams = (
+  page_id: string,
+  title: string
+): CreateNotionPageParams => {
+  if (!page_id || !title) {
+    throw new ValidationError(
+      'Params are not valid. Required fields: id and title'
+    );
+  }
+
+  return { id: page_id, title: title } as CreateNotionPageParams;
 };
