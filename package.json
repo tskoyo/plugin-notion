@@ -35,7 +35,7 @@
     "test": "vitest"
   },
   "agentConfig": {
-    "pluginType": "elizaos:client:1.0.0",
+    "pluginType": "elizaos:plugin:1.0.0",
     "pluginParameters": {
       "NOTION_API_KEY": {
         "type": "string",
