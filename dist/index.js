@@ -326,7 +326,7 @@ var buildPayload = (page_id, title) => {
   };
 };
 var validateParams = (page_id, title) => {
-  if (!page_id || !title) {
+  if (!page_id || !title || title.trim().toLowerCase() === "null") {
     throw new ValidationError(
       "Params are not valid. Required fields: id and title"
     );

@@ -78,6 +78,7 @@ export const createNotionPage = async (
 ): Promise<NotionPageResponse> => {
   try {
     const validatedParams = validateParams(params.id, params.title);
+
     const payload = buildPayload(validatedParams.id, validatedParams.title);
 
     const response = await sendNotionPostRequest<NotionPageResponse>(
@@ -119,7 +120,7 @@ const validateParams = (
   page_id: string,
   title: string
 ): CreateNotionPageParams => {
-  if (!page_id || !title) {
+  if (!page_id || !title || title.trim().toLowerCase() === 'null') {
     throw new ValidationError(
       'Params are not valid. Required fields: id and title'
     );
